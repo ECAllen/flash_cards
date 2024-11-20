@@ -1,5 +1,6 @@
 from fasthtml.common import *
 from dataclasses import dataclass
+import random
 
 # Initialize database
 db = database('qa.db')
@@ -40,6 +41,40 @@ def post(question: str, answer: str):
         H2("All Questions and Answers:"),
         qa_list,
         A("Back to form", href="/")
+    )
+
+@rt("/quiz")
+def get():
+    # Get a random Q&A
+    qas = list(qa_table())
+    if not qas:
+        return Titled("Quiz", 
+            P("No questions available yet!"),
+            A("Add some questions", href="/")
+        )
+    
+    qa = random.choice(qas)
+    
+    return Titled("Quiz Time!",
+        Div(
+            H2("Question:"),
+            P(qa.question),
+            Div(id="answer-area"),
+            Button("Show Answer", 
+                hx_get=f"/quiz/answer/{qa.id}",
+                hx_target="#answer-area"
+            ),
+            P(A("Try another", href="/quiz"), " | ", A("Back to form", href="/")),
+        )
+    )
+
+@rt("/quiz/answer/{qa_id}")
+def get(qa_id: int):
+    qa = qa_table[qa_id]
+    return Div(
+        H3("Answer:"),
+        P(qa.answer),
+        id="answer-area"
     )
 
 serve()
